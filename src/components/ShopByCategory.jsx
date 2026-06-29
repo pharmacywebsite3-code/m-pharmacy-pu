@@ -1,31 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import './ShopByCategory.css';
 
 /**
- * ShopByCategory Component
+ * Enhanced ShopByCategory Component with Advanced Features
  * 
  * Features:
- * - Click on category cards to filter products
- * - Visual "Active" badge on selected category
- * - "All Products" button to reset filter
- * - Product count display
- * - Responsive grid layout
- * - Smooth transitions and hover effects
- * 
- * Integration:
- * 1. Import and use in your main App or HomePage component:
- *    import ShopByCategory from './components/ShopByCategory';
- *    <ShopByCategory />
- * 
- * 2. To connect to your backend/API:
- *    - Replace the allProducts array with API call in useEffect
- *    - Update handleCategoryClick to fetch products from backend
+ * - Category filtering
+ * - Sorting (price, name, popularity)
+ * - Search functionality
+ * - Pagination
+ * - Price range filter
+ * - Favorites/Wishlist
+ * - Inventory status indicator
+ * - Promotions/discounts badge
+ * - Product reviews display
  */
 
-const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null }) => {
+const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPage = 12 }) => {
   const [activeCategory, setActiveCategory] = useState(null);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('popularity'); // 'price-low', 'price-high', 'name', 'popularity'
+  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [favorites, setFavorites] = useState(new Set());
 
   // Category data
   const categories = [
@@ -67,25 +66,25 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null }) => {
     }
   ];
 
-  // Sample product data - REPLACE WITH YOUR ACTUAL DATA
+  // Enhanced product data with reviews, inventory, promotions
   const allProducts = [
-    { id: 1, name: 'Multivitamin Plus', category: 'vitamins', price: 12.99, image: '💊' },
-    { id: 2, name: 'Vitamin C 1000mg', category: 'vitamins', price: 8.99, image: '💊' },
-    { id: 3, name: 'Vitamin D3', category: 'vitamins', price: 14.99, image: '💊' },
-    { id: 4, name: 'Protein Powder', category: 'wellness', price: 24.99, image: '💪' },
-    { id: 5, name: 'Energy Boost', category: 'wellness', price: 18.99, image: '💪' },
-    { id: 6, name: 'Ginger Tea', category: 'herbal', price: 6.99, image: '🌿' },
-    { id: 7, name: 'Chamomile Tea', category: 'herbal', price: 7.99, image: '🌿' },
-    { id: 8, name: 'Echinacea Extract', category: 'herbal', price: 11.99, image: '🌿' },
-    { id: 9, name: 'Bandages Assorted', category: 'firstaid', price: 4.99, image: '🏥' },
-    { id: 10, name: 'First Aid Kit', category: 'firstaid', price: 19.99, image: '🏥' },
-    { id: 11, name: 'Antiseptic Spray', category: 'firstaid', price: 5.99, image: '🏥' },
-    { id: 12, name: 'Baby Lotion', category: 'babycare', price: 9.99, image: '👶' },
-    { id: 13, name: 'Baby Shampoo', category: 'babycare', price: 8.99, image: '👶' },
-    { id: 14, name: 'Diaper Rash Cream', category: 'babycare', price: 7.99, image: '👶' },
-    { id: 15, name: 'Cough Syrup', category: 'coldflu', price: 9.99, image: '🤒' },
-    { id: 16, name: 'Throat Lozenges', category: 'coldflu', price: 4.99, image: '🤒' },
-    { id: 17, name: 'Decongestant Tablets', category: 'coldflu', price: 6.99, image: '🤒' }
+    { id: 1, name: 'Multivitamin Plus', category: 'vitamins', price: 12.99, image: '💊', reviews: 4.5, reviewCount: 128, inventory: 45, promotion: 10, rating: 4.5 },
+    { id: 2, name: 'Vitamin C 1000mg', category: 'vitamins', price: 8.99, image: '💊', reviews: 4.8, reviewCount: 256, inventory: 89, promotion: 0, rating: 4.8 },
+    { id: 3, name: 'Vitamin D3', category: 'vitamins', price: 14.99, image: '💊', reviews: 4.6, reviewCount: 189, inventory: 0, promotion: 15, rating: 4.6 },
+    { id: 4, name: 'Protein Powder', category: 'wellness', price: 24.99, image: '💪', reviews: 4.7, reviewCount: 342, inventory: 23, promotion: 20, rating: 4.7 },
+    { id: 5, name: 'Energy Boost', category: 'wellness', price: 18.99, image: '💪', reviews: 4.4, reviewCount: 97, inventory: 156, promotion: 5, rating: 4.4 },
+    { id: 6, name: 'Ginger Tea', category: 'herbal', price: 6.99, image: '🌿', reviews: 4.3, reviewCount: 74, inventory: 234, promotion: 0, rating: 4.3 },
+    { id: 7, name: 'Chamomile Tea', category: 'herbal', price: 7.99, image: '🌿', reviews: 4.6, reviewCount: 156, inventory: 145, promotion: 12, rating: 4.6 },
+    { id: 8, name: 'Echinacea Extract', category: 'herbal', price: 11.99, image: '🌿', reviews: 4.2, reviewCount: 63, inventory: 2, promotion: 0, rating: 4.2 },
+    { id: 9, name: 'Bandages Assorted', category: 'firstaid', price: 4.99, image: '🏥', reviews: 4.7, reviewCount: 198, inventory: 567, promotion: 0, rating: 4.7 },
+    { id: 10, name: 'First Aid Kit', category: 'firstaid', price: 19.99, image: '🏥', reviews: 4.8, reviewCount: 412, inventory: 34, promotion: 25, rating: 4.8 },
+    { id: 11, name: 'Antiseptic Spray', category: 'firstaid', price: 5.99, image: '🏥', reviews: 4.5, reviewCount: 145, inventory: 89, promotion: 8, rating: 4.5 },
+    { id: 12, name: 'Baby Lotion', category: 'babycare', price: 9.99, image: '👶', reviews: 4.9, reviewCount: 523, inventory: 145, promotion: 10, rating: 4.9 },
+    { id: 13, name: 'Baby Shampoo', category: 'babycare', price: 8.99, image: '👶', reviews: 4.7, reviewCount: 267, inventory: 0, promotion: 15, rating: 4.7 },
+    { id: 14, name: 'Diaper Rash Cream', category: 'babycare', price: 7.99, image: '👶', reviews: 4.8, reviewCount: 356, inventory: 203, promotion: 0, rating: 4.8 },
+    { id: 15, name: 'Cough Syrup', category: 'coldflu', price: 9.99, image: '🤒', reviews: 4.4, reviewCount: 89, inventory: 12, promotion: 20, rating: 4.4 },
+    { id: 16, name: 'Throat Lozenges', category: 'coldflu', price: 4.99, image: '🤒', reviews: 4.3, reviewCount: 112, inventory: 345, promotion: 0, rating: 4.3 },
+    { id: 17, name: 'Decongestant Tablets', category: 'coldflu', price: 6.99, image: '🤒', reviews: 4.6, reviewCount: 201, inventory: 67, promotion: 18, rating: 4.6 }
   ];
 
   /**
@@ -117,6 +116,7 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null }) => {
    */
   const handleCategoryClick = (categoryId) => {
     setActiveCategory(categoryId);
+    setCurrentPage(1);
     fetchProductsByCategory(categoryId);
   };
 
@@ -126,6 +126,46 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null }) => {
   const handleShowAll = () => {
     setActiveCategory(null);
     setFilteredProducts([]);
+    setCurrentPage(1);
+  };
+
+  /**
+   * Handle search input
+   */
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
+
+  /**
+   * Handle sort change
+   */
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+    setCurrentPage(1);
+  };
+
+  /**
+   * Handle price range change
+   */
+  const handlePriceChange = (e, index) => {
+    const newRange = [...priceRange];
+    newRange[index] = parseFloat(e.target.value);
+    setPriceRange(newRange);
+    setCurrentPage(1);
+  };
+
+  /**
+   * Toggle favorite
+   */
+  const toggleFavorite = (productId) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(productId)) {
+      newFavorites.delete(productId);
+    } else {
+      newFavorites.add(productId);
+    }
+    setFavorites(newFavorites);
   };
 
   /**
@@ -137,13 +177,89 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null }) => {
     }
   };
 
-  const productsToDisplay = activeCategory ? filteredProducts : allProducts;
+  /**
+   * Apply all filters and sorting
+   */
+  const processedProducts = useMemo(() => {
+    const productsToProcess = activeCategory ? filteredProducts : allProducts;
+    
+    let result = [...productsToProcess];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      result = result.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply price range filter
+    result = result.filter(product => 
+      product.price >= priceRange[0] && product.price <= priceRange[1]
+    );
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'price-low':
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case 'name':
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'popularity':
+      default:
+        result.sort((a, b) => b.reviewCount - a.reviewCount);
+        break;
+    }
+
+    return result;
+  }, [activeCategory, filteredProducts, searchQuery, priceRange, sortBy]);
+
+  /**
+   * Pagination
+   */
+  const totalPages = Math.ceil(processedProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedProducts = processedProducts.slice(startIndex, startIndex + itemsPerPage);
+
   const categoryName = activeCategory 
     ? categories.find(cat => cat.id === activeCategory)?.name 
     : 'All Products';
 
+  /**
+   * Render star rating
+   */
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<span key={i} className="star full">★</span>);
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(<span key={i} className="star half">★</span>);
+      } else {
+        stars.push(<span key={i} className="star empty">☆</span>);
+      }
+    }
+    return stars;
+  };
+
+  /**
+   * Get inventory status
+   */
+  const getInventoryStatus = (inventory) => {
+    if (inventory === 0) return { status: 'Out of Stock', className: 'out-of-stock' };
+    if (inventory < 5) return { status: 'Low Stock', className: 'low-stock' };
+    return { status: 'In Stock', className: 'in-stock' };
+  };
+
   return (
     <div className="shop-by-category">
+      {/* Category Section */}
       <div className="category-section">
         <h2 className="section-title">Shop by Category</h2>
         
@@ -176,41 +292,200 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null }) => {
         </div>
       </div>
 
-      {/* Product Grid Section */}
+      {/* Filters and Controls Section */}
       <div className="product-grid-section">
+        {/* Grid Header */}
         <div className="grid-header">
           <h3 className="grid-title">{categoryName}</h3>
           <span className="product-count">
-            {productsToDisplay.length} product{productsToDisplay.length !== 1 ? 's' : ''}
+            {processedProducts.length} product{processedProducts.length !== 1 ? 's' : ''}
           </span>
         </div>
 
+        {/* Controls Bar */}
+        <div className="controls-bar">
+          {/* Search */}
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={handleSearch}
+              className="search-input"
+              aria-label="Search products"
+            />
+            <span className="search-icon">🔍</span>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="sort-box">
+            <label htmlFor="sort-select">Sort by:</label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={handleSortChange}
+              className="sort-select"
+            >
+              <option value="popularity">Popularity</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="name">Name: A to Z</option>
+            </select>
+          </div>
+
+          {/* Price Range Filter */}
+          <div className="price-filter">
+            <label>Price Range:</label>
+            <div className="price-inputs">
+              <input
+                type="number"
+                min="0"
+                max="1000"
+                value={priceRange[0]}
+                onChange={(e) => handlePriceChange(e, 0)}
+                className="price-input"
+                aria-label="Minimum price"
+              />
+              <span>-</span>
+              <input
+                type="number"
+                min="0"
+                max="1000"
+                value={priceRange[1]}
+                onChange={(e) => handlePriceChange(e, 1)}
+                className="price-input"
+                aria-label="Maximum price"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Products Grid */}
         {isLoading ? (
           <div className="loading">
             <p>Loading products...</p>
           </div>
         ) : (
-          <div className="products-grid">
-            {productsToDisplay.length > 0 ? (
-              productsToDisplay.map(product => (
-                <div key={product.id} className="product-card">
-                  <div className="product-image">{product.image}</div>
-                  <h4 className="product-name">{product.name}</h4>
-                  <p className="product-price">${product.price.toFixed(2)}</p>
-                  <button 
-                    className="add-to-cart-btn"
-                    onClick={() => handleProductSelect(product)}
-                  >
-                    Add to Cart
-                  </button>
+          <>
+            <div className="products-grid">
+              {paginatedProducts.length > 0 ? (
+                paginatedProducts.map(product => {
+                  const inventoryStatus = getInventoryStatus(product.inventory);
+                  const isOutOfStock = inventoryStatus.status === 'Out of Stock';
+                  const isFavorite = favorites.has(product.id);
+
+                  return (
+                    <div 
+                      key={product.id} 
+                      className={`product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
+                    >
+                      {/* Favorite Button */}
+                      <button
+                        className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+                        onClick={() => toggleFavorite(product.id)}
+                        aria-label={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
+                        title={isFavorite ? 'Remove from wishlist' : 'Add to wishlist'}
+                      >
+                        {isFavorite ? '❤️' : '🤍'}
+                      </button>
+
+                      {/* Promotion Badge */}
+                      {product.promotion > 0 && (
+                        <div className="promotion-badge">
+                          -{product.promotion}%
+                        </div>
+                      )}
+
+                      {/* Inventory Status Badge */}
+                      <div className={`inventory-badge ${inventoryStatus.className}`}>
+                        {inventoryStatus.status}
+                      </div>
+
+                      {/* Product Image */}
+                      <div className="product-image">{product.image}</div>
+
+                      {/* Product Name */}
+                      <h4 className="product-name">{product.name}</h4>
+
+                      {/* Reviews */}
+                      <div className="product-reviews">
+                        <div className="stars">
+                          {renderStars(product.reviews)}
+                        </div>
+                        <span className="review-count">({product.reviewCount})</span>
+                      </div>
+
+                      {/* Price */}
+                      <div className="product-price-section">
+                        {product.promotion > 0 ? (
+                          <>
+                            <span className="original-price">
+                              ${product.price.toFixed(2)}
+                            </span>
+                            <span className="sale-price">
+                              ${(product.price * (1 - product.promotion / 100)).toFixed(2)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="product-price">${product.price.toFixed(2)}</span>
+                        )}
+                      </div>
+
+                      {/* Add to Cart Button */}
+                      <button 
+                        className="add-to-cart-btn"
+                        onClick={() => handleProductSelect(product)}
+                        disabled={isOutOfStock}
+                      >
+                        {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="no-products">
+                  <p>No products found matching your filters.</p>
                 </div>
-              ))
-            ) : (
-              <div className="no-products">
-                <p>No products found in this category.</p>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="pagination-btn"
+                  aria-label="Previous page"
+                >
+                  ← Previous
+                </button>
+
+                <div className="pagination-pages">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`page-btn ${currentPage === page ? 'active' : ''}`}
+                      aria-label={`Go to page ${page}`}
+                      aria-current={currentPage === page ? 'page' : undefined}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="pagination-btn"
+                  aria-label="Next page"
+                >
+                  Next →
+                </button>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>

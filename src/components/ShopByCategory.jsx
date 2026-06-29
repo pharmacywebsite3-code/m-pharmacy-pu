@@ -1,9 +1,31 @@
 import React, { useState } from 'react';
 import './ShopByCategory.css';
 
-const ShopByCategory = () => {
+/**
+ * ShopByCategory Component
+ * 
+ * Features:
+ * - Click on category cards to filter products
+ * - Visual "Active" badge on selected category
+ * - "All Products" button to reset filter
+ * - Product count display
+ * - Responsive grid layout
+ * - Smooth transitions and hover effects
+ * 
+ * Integration:
+ * 1. Import and use in your main App or HomePage component:
+ *    import ShopByCategory from './components/ShopByCategory';
+ *    <ShopByCategory />
+ * 
+ * 2. To connect to your backend/API:
+ *    - Replace the allProducts array with API call in useEffect
+ *    - Update handleCategoryClick to fetch products from backend
+ */
+
+const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null }) => {
   const [activeCategory, setActiveCategory] = useState(null);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Category data
   const categories = [
@@ -45,7 +67,7 @@ const ShopByCategory = () => {
     }
   ];
 
-  // Sample product data - replace with your actual product data
+  // Sample product data - REPLACE WITH YOUR ACTUAL DATA
   const allProducts = [
     { id: 1, name: 'Multivitamin Plus', category: 'vitamins', price: 12.99, image: '💊' },
     { id: 2, name: 'Vitamin C 1000mg', category: 'vitamins', price: 8.99, image: '💊' },
@@ -66,20 +88,55 @@ const ShopByCategory = () => {
     { id: 17, name: 'Decongestant Tablets', category: 'coldflu', price: 6.99, image: '🤒' }
   ];
 
-  // Handle category click
-  const handleCategoryClick = (categoryId) => {
-    setActiveCategory(categoryId);
-    const filtered = allProducts.filter(product => product.category === categoryId);
-    setFilteredProducts(filtered);
+  /**
+   * Fetch products from API (optional)
+   */
+  const fetchProductsByCategory = async (categoryId) => {
+    if (!apiEndpoint) {
+      const filtered = allProducts.filter(product => product.category === categoryId);
+      setFilteredProducts(filtered);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${apiEndpoint}?category=${categoryId}`);
+      const data = await response.json();
+      setFilteredProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      const filtered = allProducts.filter(product => product.category === categoryId);
+      setFilteredProducts(filtered);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Handle "All Products" click
+  /**
+   * Handle category click - filters products
+   */
+  const handleCategoryClick = (categoryId) => {
+    setActiveCategory(categoryId);
+    fetchProductsByCategory(categoryId);
+  };
+
+  /**
+   * Handle "All Products" click - resets filter
+   */
   const handleShowAll = () => {
     setActiveCategory(null);
     setFilteredProducts([]);
   };
 
-  // Get products to display
+  /**
+   * Handle product selection
+   */
+  const handleProductSelect = (product) => {
+    if (onProductSelect) {
+      onProductSelect(product);
+    }
+  };
+
   const productsToDisplay = activeCategory ? filteredProducts : allProducts;
   const categoryName = activeCategory 
     ? categories.find(cat => cat.id === activeCategory)?.name 
@@ -95,6 +152,7 @@ const ShopByCategory = () => {
           <button
             className={`category-card all-products-btn ${!activeCategory ? 'active' : ''}`}
             onClick={handleShowAll}
+            aria-pressed={!activeCategory}
           >
             <span className="category-icon">🛍️</span>
             <span className="category-name">All Products</span>
@@ -107,6 +165,8 @@ const ShopByCategory = () => {
               key={category.id}
               className={`category-card ${activeCategory === category.id ? 'active' : ''}`}
               onClick={() => handleCategoryClick(category.id)}
+              aria-pressed={activeCategory === category.id}
+              title={category.description}
             >
               <span className="category-icon">{category.icon}</span>
               <span className="category-name">{category.name}</span>
@@ -116,7 +176,7 @@ const ShopByCategory = () => {
         </div>
       </div>
 
-      {/* Product Grid */}
+      {/* Product Grid Section */}
       <div className="product-grid-section">
         <div className="grid-header">
           <h3 className="grid-title">{categoryName}</h3>
@@ -125,22 +185,33 @@ const ShopByCategory = () => {
           </span>
         </div>
 
-        <div className="products-grid">
-          {productsToDisplay.length > 0 ? (
-            productsToDisplay.map(product => (
-              <div key={product.id} className="product-card">
-                <div className="product-image">{product.image}</div>
-                <h4 className="product-name">{product.name}</h4>
-                <p className="product-price">${product.price.toFixed(2)}</p>
-                <button className="add-to-cart-btn">Add to Cart</button>
+        {isLoading ? (
+          <div className="loading">
+            <p>Loading products...</p>
+          </div>
+        ) : (
+          <div className="products-grid">
+            {productsToDisplay.length > 0 ? (
+              productsToDisplay.map(product => (
+                <div key={product.id} className="product-card">
+                  <div className="product-image">{product.image}</div>
+                  <h4 className="product-name">{product.name}</h4>
+                  <p className="product-price">${product.price.toFixed(2)}</p>
+                  <button 
+                    className="add-to-cart-btn"
+                    onClick={() => handleProductSelect(product)}
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="no-products">
+                <p>No products found in this category.</p>
               </div>
-            ))
-          ) : (
-            <div className="no-products">
-              <p>No products found in this category.</p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

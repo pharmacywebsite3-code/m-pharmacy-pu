@@ -2,10 +2,12 @@ import React, { useState, useMemo } from 'react';
 import './ShopByCategory.css';
 
 /**
- * Enhanced ShopByCategory Component with Advanced Features
+ * Enhanced ShopByCategory Component with Premium Medical Tech Aesthetic
  * 
  * Features:
- * - Category filtering
+ * - Ultra-modern UI with medical green/teal gradients
+ * - Smooth hover effects and micro-interactions
+ * - Category filtering with active state highlighting
  * - Sorting (price, name, popularity)
  * - Search functionality
  * - Pagination
@@ -21,12 +23,12 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('popularity'); // 'price-low', 'price-high', 'name', 'popularity'
+  const [sortBy, setSortBy] = useState('popularity');
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState(new Set());
 
-  // Category data
+  // Category data with enhanced styling
   const categories = [
     {
       id: 'wellness',
@@ -87,9 +89,6 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
     { id: 17, name: 'Decongestant Tablets', category: 'coldflu', price: 6.99, image: '🤒', reviews: 4.6, reviewCount: 201, inventory: 67, promotion: 18, rating: 4.6 }
   ];
 
-  /**
-   * Fetch products from API (optional)
-   */
   const fetchProductsByCategory = async (categoryId) => {
     if (!apiEndpoint) {
       const filtered = allProducts.filter(product => product.category === categoryId);
@@ -111,43 +110,28 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
     }
   };
 
-  /**
-   * Handle category click - filters products
-   */
   const handleCategoryClick = (categoryId) => {
     setActiveCategory(categoryId);
     setCurrentPage(1);
     fetchProductsByCategory(categoryId);
   };
 
-  /**
-   * Handle "All Products" click - resets filter
-   */
   const handleShowAll = () => {
     setActiveCategory(null);
     setFilteredProducts([]);
     setCurrentPage(1);
   };
 
-  /**
-   * Handle search input
-   */
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
   };
 
-  /**
-   * Handle sort change
-   */
   const handleSortChange = (e) => {
     setSortBy(e.target.value);
     setCurrentPage(1);
   };
 
-  /**
-   * Handle price range change
-   */
   const handlePriceChange = (e, index) => {
     const newRange = [...priceRange];
     newRange[index] = parseFloat(e.target.value);
@@ -155,9 +139,6 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
     setCurrentPage(1);
   };
 
-  /**
-   * Toggle favorite
-   */
   const toggleFavorite = (productId) => {
     const newFavorites = new Set(favorites);
     if (newFavorites.has(productId)) {
@@ -168,36 +149,27 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
     setFavorites(newFavorites);
   };
 
-  /**
-   * Handle product selection
-   */
   const handleProductSelect = (product) => {
     if (onProductSelect) {
       onProductSelect(product);
     }
   };
 
-  /**
-   * Apply all filters and sorting
-   */
   const processedProducts = useMemo(() => {
     const productsToProcess = activeCategory ? filteredProducts : allProducts;
     
     let result = [...productsToProcess];
 
-    // Apply search filter
     if (searchQuery.trim()) {
       result = result.filter(product =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Apply price range filter
     result = result.filter(product => 
       product.price >= priceRange[0] && product.price <= priceRange[1]
     );
 
-    // Apply sorting
     switch (sortBy) {
       case 'price-low':
         result.sort((a, b) => a.price - b.price);
@@ -217,9 +189,6 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
     return result;
   }, [activeCategory, filteredProducts, searchQuery, priceRange, sortBy]);
 
-  /**
-   * Pagination
-   */
   const totalPages = Math.ceil(processedProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedProducts = processedProducts.slice(startIndex, startIndex + itemsPerPage);
@@ -228,9 +197,6 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
     ? categories.find(cat => cat.id === activeCategory)?.name 
     : 'All Products';
 
-  /**
-   * Render star rating
-   */
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -248,9 +214,6 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
     return stars;
   };
 
-  /**
-   * Get inventory status
-   */
   const getInventoryStatus = (inventory) => {
     if (inventory === 0) return { status: 'Out of Stock', className: 'out-of-stock' };
     if (inventory < 5) return { status: 'Low Stock', className: 'low-stock' };
@@ -259,6 +222,14 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
 
   return (
     <div className="shop-by-category">
+      {/* Hero Section with Gradient Background */}
+      <div className="hero-section">
+        <div className="hero-content">
+          <h1 className="hero-title">Premium Health & Wellness</h1>
+          <p className="hero-subtitle">Discover trusted medical products for your family's wellbeing</p>
+        </div>
+      </div>
+
       {/* Category Section */}
       <div className="category-section">
         <h2 className="section-title">Shop by Category</h2>
@@ -363,7 +334,8 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
         {/* Products Grid */}
         {isLoading ? (
           <div className="loading">
-            <p>Loading products...</p>
+            <div className="loading-spinner"></div>
+            <p>Loading premium products...</p>
           </div>
         ) : (
           <>

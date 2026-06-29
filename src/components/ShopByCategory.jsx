@@ -2,11 +2,16 @@ import React, { useState, useMemo } from 'react';
 import './ShopByCategory.css';
 
 /**
- * Enhanced ShopByCategory Component with Premium Medical Tech Aesthetic
+ * Enhanced ShopByCategory Component with Ultra-Modern Premium Medical Tech Aesthetic
+ * 
+ * Design Features:
+ * - Medical green/teal gradients with soft backgrounds
+ * - Modern cards with rounded-xl corners and subtle drop shadows
+ * - Smooth hover animations (transition-all duration-300)
+ * - Micro-interactions for active states
+ * - Premium medical tech aesthetic
  * 
  * Features:
- * - Ultra-modern UI with medical green/teal gradients
- * - Smooth hover effects and micro-interactions
  * - Category filtering with active state highlighting
  * - Sorting (price, name, popularity)
  * - Search functionality
@@ -28,7 +33,6 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState(new Set());
 
-  // Category data with enhanced styling
   const categories = [
     {
       id: 'wellness',
@@ -68,7 +72,6 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
     }
   ];
 
-  // Enhanced product data with reviews, inventory, promotions
   const allProducts = [
     { id: 1, name: 'Multivitamin Plus', category: 'vitamins', price: 12.99, image: '💊', reviews: 4.5, reviewCount: 128, inventory: 45, promotion: 10, rating: 4.5 },
     { id: 2, name: 'Vitamin C 1000mg', category: 'vitamins', price: 8.99, image: '💊', reviews: 4.8, reviewCount: 256, inventory: 89, promotion: 0, rating: 4.8 },
@@ -222,7 +225,7 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
 
   return (
     <div className="shop-by-category">
-      {/* Hero Section with Gradient Background */}
+      {/* Hero Section with Medical Green/Teal Gradient */}
       <div className="hero-section">
         <div className="hero-content">
           <h1 className="hero-title">Premium Health & Wellness</h1>
@@ -246,7 +249,7 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
             {!activeCategory && <span className="active-badge">Active</span>}
           </button>
 
-          {/* Category Cards */}
+          {/* Category Cards with Modern Styling */}
           {categories.map(category => (
             <button
               key={category.id}
@@ -273,7 +276,7 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
           </span>
         </div>
 
-        {/* Controls Bar */}
+        {/* Controls Bar with Modern Design */}
         <div className="controls-bar">
           {/* Search */}
           <div className="search-box">
@@ -351,7 +354,7 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
                       key={product.id} 
                       className={`product-card ${isOutOfStock ? 'out-of-stock' : ''}`}
                     >
-                      {/* Favorite Button */}
+                      {/* Favorite Button with Micro-interaction */}
                       <button
                         className={`favorite-btn ${isFavorite ? 'active' : ''}`}
                         onClick={() => toggleFavorite(product.id)}
@@ -373,7 +376,7 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
                         {inventoryStatus.status}
                       </div>
 
-                      {/* Product Image */}
+                      {/* Product Image with Smooth Hover */}
                       <div className="product-image">{product.image}</div>
 
                       {/* Product Name */}
@@ -403,7 +406,7 @@ const ShopByCategory = ({ onProductSelect = null, apiEndpoint = null, itemsPerPa
                         )}
                       </div>
 
-                      {/* Add to Cart Button */}
+                      {/* Add to Cart Button with Smooth Transition */}
                       <button 
                         className="add-to-cart-btn"
                         onClick={() => handleProductSelect(product)}
